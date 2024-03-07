@@ -11,7 +11,19 @@ df = pd.DataFrame(data)
 tab2, tab1 = st.tabs(["sql", "Others"])
 
 with tab2:
-    st.write(df)
+    st.write("""
+    # SQL SRS 
+    Spaced Repetition System SQL practice
+    """)
+
+    option = st.selectbox(
+        "What would you like to review",
+        ("Joins", "GroupBy", "Windows Functions"),
+        index=None,
+        placeholder="SEelect contact method...",
+    )
+
+    st.write("You selected : ", option)
     input_text = st.text_area(label="Entrez vote request: ")
     st.write(input_text)
     if input_text != "":
