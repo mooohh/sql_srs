@@ -60,3 +60,5 @@ with tab1:
     st.write("beverages: ", beverages)
     st.write("food_items: ", food_items)
     st.write("Expected: ", result)
+    st.write("Result: ", result)
+    #teste
