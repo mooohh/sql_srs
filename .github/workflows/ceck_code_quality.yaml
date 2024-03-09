@@ -1,0 +1,15 @@
+name: check_code_quality
+on: pull_request
+jobs:
+  black_check:
+    runs-on: Ubuntu 23.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/python@v4
+        with:
+          python-version: 3.9
+      - run: |
+          python -m install --upgrade pip
+          pip install black
+      - run: |
+          black --check --version 
