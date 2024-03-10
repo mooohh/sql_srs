@@ -6,30 +6,21 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
-CSV = """
-beverage,price
-orange juice,2.5
-Expresso,2
-Tea,3
-"""
+con = duckdb.connect(database="data/exercises_sql_tables.duckdb", read_only=False)
 
-beverages = pd.read_csv(io.StringIO(CSV))
+with st.sidebar:
+    theme = st.selectbox(
+        "What would you like to review",
+        ("cross_joins", "GroupBy", "Windows Functions"),
+        index=None,
+        placeholder="Seelect contact method...",
+    )
+    exercise = con.execute(f"SELECT * FROM exercises_list_df WHERE theme='{theme}'").df()
 
-CSV2 = """
-food_item,food_price
-cookie juice,2.5
-chocolate,2
-muffin,3
-"""
+    st.write("You selected : ", exercise)
 
-food_items = pd.read_csv(io.StringIO(CSV2))
 
-TRUE_REQUEST = """
-SELECT * FROM beverages
-CROSS JOIN food_items
-"""
-
-solution_df = duckdb.sql(TRUE_REQUEST).df()
+request = st.text_area(label="Votre code SQL ici")
 
 st.write(
     """
@@ -38,19 +29,10 @@ st.write(
     """
 )
 
-with st.sidebar:
-    option = st.selectbox(
-        "What would you like to review",
-        ("Joins", "GroupBy", "Windows Functions"),
-        index=None,
-        placeholder="SEelect contact method...",
-    )
 
-    st.write("You selected : ", option)
-
-request = st.text_area(label="Votre code SQL ici")
-
+#solution_df = duckdb.sql(TRUE_REQUEST).df()
 # Write the request
+"""
 st.write(request)
 
 if request != "":
@@ -76,7 +58,6 @@ if request != "":
             st.write(comparision_result)
     except ValueError as e:
         st.write("the result is not identical")
-
 else:
     st.write("Your should write a request")
 
@@ -88,6 +69,9 @@ with solution_tab:
 with tables_tab:
     st.write("beverages: ", beverages)
     st.write("food_items: ", food_items)
-    st.write("Expected: ", solution_df)
     st.write("Result: ", solution_df)
+    st.write("Expected: ", solution_df)
+    
+"""
+
 
