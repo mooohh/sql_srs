@@ -1,36 +1,42 @@
-import pandas as pd
-import streamlit as st
-import duckdb
+# pylint: disable=missing-module-docstring
+
 import io
 
+import duckdb
+import pandas as pd
+import streamlit as st
 
-csv = '''
+CSV = """
 beverage,price
 orange juice,2.5
 Expresso,2
 Tea,3
-'''
-
-beverages = pd.read_csv(io.StringIO(csv))
-
-csv2 = '''
-food_item,food_price
-cookie juice,2.5
-chocolatine,2
-muffin,3
-'''
-
-food_items = pd.read_csv(io.StringIO(csv2))
-
-query_beverages = """
-SELECT * FROM beverages
 """
 
-st.write("""
+beverages = pd.read_csv(io.StringIO(CSV))
+
+CSV2 = """
+food_item,food_price
+cookie juice,2.5
+chocolate,2
+muffin,3
+"""
+
+food_items = pd.read_csv(io.StringIO(CSV2))
+
+TRUE_REQUEST = """
+SELECT * FROM beverages
+CROSS JOIN food_items
+"""
+
+solution_df = duckdb.sql(TRUE_REQUEST).df()
+
+st.write(
+    """
     # SQL SRS 
     Spaced Repetition System SQL practice
-    """)
-
+    """
+)
 
 with st.sidebar:
     option = st.selectbox(
@@ -42,23 +48,46 @@ with st.sidebar:
 
     st.write("You selected : ", option)
 
-input_text = st.text_area(label="Entrez vote request: ")
-st.write(input_text)
+request = st.text_area(label="Votre code SQL ici")
 
-if input_text != "":
-    sql_result = duckdb.sql(input_text)
-    st.dataframe(sql_result.df())
+# Write the request
+st.write(request)
 
-tab1, tab2 = st.tabs(["Tables", "Solution"])
+if request != "":
+    result_df = duckdb.sql(request).df()
+    st.dataframe(result_df)
 
-with tab2:
-    st.write(query_beverages)
+    if len(result_df.columns) != len(solution_df.columns):
+        st.write("Some columns are missing")
 
-with tab1:
-    result = duckdb.sql(query_beverages).df()
+    n_lines_difference = result_df.shape[0] - solution_df.shape[0]
 
+    if n_lines_difference != 0:
+        st.write(
+            f"Your request has a {n_lines_difference} lines difference with the solution_df"
+        )
+
+    try:
+        comparision_result = result_df.compare(solution_df[result_df.columns])
+        if comparision_result.empty:
+            st.write("You Succeed")
+        else:
+            st.write("You did not succeed")
+            st.write(comparision_result)
+    except ValueError as e:
+        st.write("the result is not identical")
+
+else:
+    st.write("Your should write a request")
+
+tables_tab, solution_tab = st.tabs(["Tables", "Solution"])
+
+with solution_tab:
+    st.write(TRUE_REQUEST)
+
+with tables_tab:
     st.write("beverages: ", beverages)
     st.write("food_items: ", food_items)
-    st.write("Expected: ", result)
-    st.write("Result: ", result)
-    #teste
+    st.write("Expected: ", solution_df)
+    st.write("Result: ", solution_df)
+
