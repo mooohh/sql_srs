@@ -1,64 +1,60 @@
-import pandas as pd
-import streamlit as st
-import duckdb
+# pylint: disable=missing-module-docstring
+import ast
 import io
 
+import duckdb
+import streamlit as st
 
-csv = '''
-beverage,price
-orange juice,2.5
-Expresso,2
-Tea,3
-'''
-
-beverages = pd.read_csv(io.StringIO(csv))
-
-csv2 = '''
-food_item,food_price
-cookie juice,2.5
-chocolatine,2
-muffin,3
-'''
-
-food_items = pd.read_csv(io.StringIO(csv2))
-
-query_beverages = """
-SELECT * FROM beverages
-"""
-
-st.write("""
-    # SQL SRS 
-    Spaced Repetition System SQL practice
-    """)
-
+con = duckdb.connect(database="data/exercises_sql_tables.duckdb", read_only=False)
 
 with st.sidebar:
-    option = st.selectbox(
+    theme = st.selectbox(
         "What would you like to review",
-        ("Joins", "GroupBy", "Windows Functions"),
+        ("cross_joins", "GroupBy", "window_functions"),
         index=None,
-        placeholder="SEelect contact method...",
+        placeholder="Select contact method...",
     )
+    exercise_df = con.execute(f"SELECT * FROM exercises_list_df WHERE theme='{theme}'").df()
 
-    st.write("You selected : ", option)
+    st.write("You selected : ", exercise_df)
 
-input_text = st.text_area(label="Entrez vote request: ")
-st.write(input_text)
+st.write(
+    """
+    # SQL SRS 
+    Spaced Repetition System SQL practice
+    """
+)
 
-if input_text != "":
-    sql_result = duckdb.sql(input_text)
-    st.dataframe(sql_result.df())
+request = st.text_area(label="Votre code SQL ici")
+TRUE_REQUEST = "SELECT * FROM beverages"
 
-tab1, tab2 = st.tabs(["Tables", "Solution"])
+if request != "":
+    user_answer_df = con.execute(query=request) .df()
+    st.write(user_answer_df)
+    real_answer_df = con.execute(TRUE_REQUEST).df()
+    try:
+        comparison_result = user_answer_df.compare(real_answer_df[user_answer_df.columns])
+        if comparison_result.empty:
+            st.write("You Succeed")
+        else:
+            st.write("You did not succeed")
+            st.write(comparison_result)
+    except ValueError as e:
+        st.write("the result is not identical")
+else:
+    st.write("Your should write a request")
 
-with tab2:
-    st.write(query_beverages)
+tables_tab, solution_tab = st.tabs(["Tables", "Solution"])
 
-with tab1:
-    result = duckdb.sql(query_beverages).df()
+with tables_tab:
+    exercise_tables = ast.literal_eval(exercise_df.loc[0, 'tables'])
+    for table in exercise_tables:
+        table_df = con.execute(f"SELECT * FROM {table}").df()
+        st.write(f"{table}", table_df)
 
-    st.write("beverages: ", beverages)
-    st.write("food_items: ", food_items)
-    st.write("Expected: ", result)
-    st.write("Result: ", result)
-    #teste
+with solution_tab:
+    ANSWER_FILE = exercise_df.loc[0, "exercises_name"]
+    with open(f"answers/{ANSWER_FILE}.sql", "r") as f:
+        ANSWER_STR = f.read()
+
+    st.write(ANSWER_STR)
