@@ -1,9 +1,8 @@
 # pylint: disable=missing-module-docstring
-
+import ast
 import io
 
 import duckdb
-import pandas as pd
 import streamlit as st
 
 con = duckdb.connect(database="data/exercises_sql_tables.duckdb", read_only=False)
@@ -11,16 +10,13 @@ con = duckdb.connect(database="data/exercises_sql_tables.duckdb", read_only=Fals
 with st.sidebar:
     theme = st.selectbox(
         "What would you like to review",
-        ("cross_joins", "GroupBy", "Windows Functions"),
+        ("cross_joins", "GroupBy", "window_functions"),
         index=None,
-        placeholder="Seelect contact method...",
+        placeholder="Select contact method...",
     )
-    exercise = con.execute(f"SELECT * FROM exercises_list_df WHERE theme='{theme}'").df()
+    exercise_df = con.execute(f"SELECT * FROM exercises_list_df WHERE theme='{theme}'").df()
 
-    st.write("You selected : ", exercise)
-
-
-request = st.text_area(label="Votre code SQL ici")
+    st.write("You selected : ", exercise_df)
 
 st.write(
     """
@@ -29,33 +25,20 @@ st.write(
     """
 )
 
-
-#solution_df = duckdb.sql(TRUE_REQUEST).df()
-# Write the request
-"""
-st.write(request)
+request = st.text_area(label="Votre code SQL ici")
+TRUE_REQUEST = "SELECT * FROM beverages"
 
 if request != "":
-    result_df = duckdb.sql(request).df()
-    st.dataframe(result_df)
-
-    if len(result_df.columns) != len(solution_df.columns):
-        st.write("Some columns are missing")
-
-    n_lines_difference = result_df.shape[0] - solution_df.shape[0]
-
-    if n_lines_difference != 0:
-        st.write(
-            f"Your request has a {n_lines_difference} lines difference with the solution_df"
-        )
-
+    user_answer_df = con.execute(query=request) .df()
+    st.write(user_answer_df)
+    real_answer_df = con.execute(TRUE_REQUEST).df()
     try:
-        comparision_result = result_df.compare(solution_df[result_df.columns])
-        if comparision_result.empty:
+        comparison_result = user_answer_df.compare(real_answer_df[user_answer_df.columns])
+        if comparison_result.empty:
             st.write("You Succeed")
         else:
             st.write("You did not succeed")
-            st.write(comparision_result)
+            st.write(comparison_result)
     except ValueError as e:
         st.write("the result is not identical")
 else:
@@ -63,15 +46,15 @@ else:
 
 tables_tab, solution_tab = st.tabs(["Tables", "Solution"])
 
-with solution_tab:
-    st.write(TRUE_REQUEST)
-
 with tables_tab:
-    st.write("beverages: ", beverages)
-    st.write("food_items: ", food_items)
-    st.write("Result: ", solution_df)
-    st.write("Expected: ", solution_df)
-    
-"""
+    exercise_tables = ast.literal_eval(exercise_df.loc[0, 'tables'])
+    for table in exercise_tables:
+        table_df = con.execute(f"SELECT * FROM {table}").df()
+        st.write(f"{table}", table_df)
 
+with solution_tab:
+    ANSWER_FILE = exercise_df.loc[0, "exercises_name"]
+    with open(f"answers/{ANSWER_FILE}.sql", "r") as f:
+        ANSWER_STR = f.read()
 
+    st.write(ANSWER_STR)
