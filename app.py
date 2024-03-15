@@ -12,7 +12,7 @@ if "data" not in os.listdir():
     logging.error("create the data folder")
     os.mkdir("data")
 
-if "exercises_sql_tables.duckdb" not in os.listdir("data"):
+if 'exercises_sql_tables.duckdb' not in os.listdir("data"):
     exec(open("init_db.py").read())
 
 con = duckdb.connect(database="data/exercises_sql_tables.duckdb", read_only=False)
@@ -42,6 +42,7 @@ try:
     with open(f"answers/{ANSWER_FILE}.sql", "r") as f:
         ANSWER_STR = f.read()
     st.write(ANSWER_STR)
+    
     if request != "":
         user_answer_df = con.execute(query=request).df()
         st.write(user_answer_df)
@@ -62,13 +63,11 @@ try:
     with tables_tab:
         exercise_tables = exercise_df.loc[0, 'tables']
         for table in exercise_tables:
-            print("---->", table)
             table_df = con.execute(f"SELECT * FROM {table}").df()
             st.write(f"{table}", table_df)
 
     with solution_tab:
         st.write(ANSWER_STR)
-except ValueError:
+except (ValueError, KeyError):
     st.write("You should choose an exercise please ")
-
 con.close()
