@@ -41,7 +41,8 @@ try:
     ANSWER_FILE = exercise_df.loc[0, "exercises_name"]
     with open(f"answers/{ANSWER_FILE}.sql", "r") as f:
         ANSWER_STR = f.read()
-
+    st.write(ANSWER_STR)
+    
     if request != "":
         user_answer_df = con.execute(query=request).df()
         st.write(user_answer_df)
@@ -69,4 +70,4 @@ try:
         st.write(ANSWER_STR)
 except (ValueError, KeyError):
     st.write("You should choose an exercise please ")
-
+con.close()
